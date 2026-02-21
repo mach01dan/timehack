@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="USAF Pilot Training Time Hack - Precise Time Synchronization">
+    <title>USAF Time Hack</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="header">
+        <div class="timezone-selector">
+            <label for="tz-select">Timezone:</label>
+            <select id="tz-select">
+                <option value="UTC">UTC (Zulu)</option>
+                <optgroup label="US Time Zones">
+                    <option value="America/New_York">Eastern</option>
+                    <option value="America/Chicago">Central</option>
+                    <option value="America/Denver">Mountain</option>
+                    <option value="America/Los_Angeles">Pacific</option>
+                    <option value="Pacific/Honolulu">Hawaii</option>
+                </optgroup>
+                <optgroup label="Common">
+                    <option value="Europe/London">London (GMT)</option>
+                    <option value="Europe/Paris">Central Europe</option>
+                    <option value="Asia/Tokyo">Tokyo</option>
+                    <option value="Australia/Sydney">Sydney</option>
+                </optgroup>
+            </select>
+        </div>
+        <button id="fullscreen-btn" class="control-btn" title="Toggle Fullscreen">⛶</button>
+        <button id="wakelock-btn" class="control-btn" title="Toggle Wake Lock">💡</button>
+    </div>
+
+    <div class="main-container">
+        <div class="clock-display">
+            <div id="clock" class="clock">00:00:00</div>
+            <div id="flash-overlay" class="flash-overlay"></div>
+        </div>
+
+        <div id="countdown-overlay" class="countdown-overlay hidden">
+            <div id="countdown-number" class="countdown-number">10</div>
+        </div>
+
+        <div class="sync-status">
+            <span id="sync-status-text">Syncing...</span>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div id="upcoming-text" class="upcoming-text">In one minute, the time will be 00:00 local.</div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,307 @@
+/* ========================================
+   USAF Time Hack - Styles
+   Military-professional minimal design
+   ======================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    font-family: 'Courier New', monospace;
+    background: #000;
+    color: #fff;
+    overflow: hidden;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ========== Header & Controls ========== */
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background: rgba(0, 0, 0, 0.9);
+    border-bottom: 1px solid #333;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.timezone-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.timezone-selector label {
+    font-weight: bold;
+    opacity: 0.8;
+}
+
+#tz-select {
+    padding: 4px 8px;
+    background: #111;
+    color: #fff;
+    border: 1px solid #444;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+#tz-select:hover {
+    border-color: #666;
+}
+
+#tz-select:focus {
+    outline: none;
+    border-color: #0f0;
+    box-shadow: 0 0 4px rgba(0, 255, 0, 0.3);
+}
+
+.control-btn {
+    background: #111;
+    color: #fff;
+    border: 1px solid #444;
+    padding: 6px 12px;
+    margin-left: 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s ease;
+}
+
+.control-btn:hover {
+    border-color: #0f0;
+    box-shadow: 0 0 4px rgba(0, 255, 0, 0.3);
+}
+
+.control-btn:active {
+    opacity: 0.7;
+}
+
+/* ========== Main Container ========== */
+
+.main-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    background: #000;
+}
+
+/* ========== Clock Display ========== */
+
+.clock-display {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+.clock {
+    font-size: clamp(60px, 20vw, 200px);
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    text-align: center;
+    line-height: 1.2;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+    transition: color 0.05s ease, background 0.05s ease;
+}
+
+/* ========== Flash Overlay ========== */
+
+.flash-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    pointer-events: none;
+    transition: background 0.05s ease;
+}
+
+.flash-overlay.flash {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+/* When flash is active, invert the clock text */
+.flash-overlay.flash ~ .clock {
+    color: #000;
+    text-shadow: none;
+}
+
+/* ========== Countdown Overlay ========== */
+
+.countdown-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.countdown-overlay.hidden {
+    display: none;
+}
+
+.countdown-number {
+    font-size: clamp(80px, 30vw, 300px);
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+    letter-spacing: 0.1em;
+    animation: pulse-countdown 0.5s ease-in-out;
+}
+
+@keyframes pulse-countdown {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ========== Sync Status ========== */
+
+.sync-status {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 14px;
+    color: #0f0;
+    text-shadow: 0 0 8px rgba(0, 255, 0, 0.6);
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.sync-status.synced {
+    opacity: 0;
+}
+
+/* ========== Footer ========== */
+
+.footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.9);
+    border-top: 1px solid #333;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.upcoming-text {
+    text-align: center;
+    color: #aaa;
+    font-size: clamp(14px, 3vw, 18px);
+    line-height: 1.4;
+}
+
+/* ========== Fullscreen Mode ========== */
+
+body.fullscreen {
+    width: 100vw;
+    height: 100vh;
+}
+
+body.fullscreen .header,
+body.fullscreen .footer {
+    display: none;
+}
+
+body.fullscreen .main-container {
+    width: 100vw;
+    height: 100vh;
+}
+
+/* ========== Mobile Responsive ========== */
+
+@media (max-width: 768px) {
+    .header {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px;
+    }
+
+    .timezone-selector {
+        order: 1;
+        width: 100%;
+    }
+
+    .control-btn {
+        margin: 0 4px;
+        padding: 5px 10px;
+        font-size: 14px;
+    }
+
+    .footer {
+        padding: 15px 10px;
+    }
+
+    .upcoming-text {
+        font-size: 14px;
+    }
+
+    .clock {
+        font-size: clamp(50px, 15vw, 140px);
+    }
+
+    .countdown-number {
+        font-size: clamp(60px, 25vw, 200px);
+    }
+}
+
+@media (max-height: 600px) {
+    .header,
+    .footer {
+        padding: 8px 12px;
+        font-size: 11px;
+    }
+
+    .clock {
+        font-size: clamp(40px, 12vw, 100px);
+    }
+
+    .countdown-number {
+        font-size: clamp(50px, 20vw, 150px);
+    }
+}
+
+/* ========== Print Styles ========== */
+
+@media print {
+    body {
+        display: none;
+    }
+}
