@@ -289,23 +289,35 @@ const VisualCueManager = (() => {
     }
 
     /**
-     * Trigger 3 flashes with ~150ms each
+     * Trigger flash(es) with customizable count and style
      * Uses CSS class toggling for performance
+     * @param {object} options - {count: number, type: 'regular'|'countdown'}
      */
-    function triggerFlash() {
+    function triggerFlash(options = {}) {
+        const {
+            count = 3,
+            type = 'regular'
+        } = options;
+
         let flashCount = 0;
-        const FLASH_DURATION_MS = 140;
+        const FLASH_DURATION_MS = 150;
         const FLASH_INTERVAL_MS = 160;
 
         function doFlash() {
-            if (flashCount >= 3) return;
+            if (flashCount >= count) return;
             
             DOM.flashOverlay.classList.add('flash');
+            if (type === 'countdown') {
+                DOM.flashOverlay.classList.add('flash-countdown');
+                DOM.clock.classList.add('flash-text-invert');
+            }
             flashCount++;
             
             setTimeout(() => {
                 DOM.flashOverlay.classList.remove('flash');
-                if (flashCount < 3) {
+                DOM.flashOverlay.classList.remove('flash-countdown');
+                DOM.clock.classList.remove('flash-text-invert');
+                if (flashCount < count) {
                     setTimeout(doFlash, FLASH_INTERVAL_MS);
                 }
             }, FLASH_DURATION_MS);
@@ -337,23 +349,21 @@ const VisualCueManager = (() => {
 
     /**
      * Update countdown display
+     * Single flash per second during countdown period (10 seconds before minute)
+     * with inverted colors (black text on white) so time remains visible
      * @param {number} seconds - Current UTC seconds
      */
     function updateCountdown(seconds) {
         if (shouldCountdown(seconds)) {
             const countNum = getCountdownNumber(seconds);
             if (countNum > 0 && countNum <= 10) {
-                DOM.countdownOverlay.classList.remove('hidden');
-                DOM.countdownNumber.textContent = countNum;
-                
-                // Trigger flash at each countdown second
+                // Trigger single countdown flash at each second
                 if (seconds !== lastCountdownSecond) {
-                    triggerFlash();
+                    triggerFlash({ count: 1, type: 'countdown' });
                     lastCountdownSecond = seconds;
                 }
             }
         } else {
-            DOM.countdownOverlay.classList.add('hidden');
             lastCountdownSecond = -1;
         }
     }
@@ -422,13 +432,13 @@ const DisplayManager = (() => {
             const nextMinute = TimezoneManager.getNextMinuteInTimezone(utcDate, timezone);
             const hour = String(nextMinute.hour).padStart(2, '0');
             const minute = String(nextMinute.minute).padStart(2, '0');
-            text = `In one minute, the time will be ${hour}:${minute} local.`;
+            text = `IN ONE MINUTE, THE TIME WILL BE ${hour}:${minute} LOCAL`;
         } else {
             // 30 seconds or less
             const nextMinute = TimezoneManager.getNextMinuteInTimezone(utcDate, timezone);
             const hour = String(nextMinute.hour).padStart(2, '0');
             const minute = String(nextMinute.minute).padStart(2, '0');
-            text = `In 30 seconds, the time will be ${hour}:${minute} local.`;
+            text = `IN 30 SECONDS, THE TIME WILL BE ${hour}:${minute} LOCAL`;
         }
 
         DOM.upcomingText.textContent = text;
