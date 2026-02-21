@@ -1,0 +1,20 @@
+[client]
+showErrorDetails = false
+
+[logger]
+level = "error"
+
+[theme]
+primaryColor = "#ffffff"
+backgroundColor = "#000000"
+secondaryBackgroundColor = "#000000"
+textColor = "#ffffff"
+font = "monospace"
+
+[browser]
+gatherUsageStats = false
+serverAddress = "localhost"
+
+[server]
+headless = true
+maxUploadSize = 1
