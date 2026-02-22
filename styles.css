@@ -248,14 +248,8 @@ body.fullscreen {
     height: 100vh;
 }
 
-body.fullscreen .header,
-body.fullscreen .footer {
-    display: none;
-}
-
 body.fullscreen .main-container {
     width: 100vw;
-    height: 100vh;
 }
 
 /* ========== Mobile Responsive ========== */

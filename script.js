@@ -498,7 +498,7 @@ const DisplayManager = (() => {
 })();
 
 // ============================================================================
-// FULLSCREEN & WAKE LOCK MODULE
+// FULLSCREEN MODE MODULE
 // ============================================================================
 
 const PresentationMode = (() => {
@@ -507,9 +507,39 @@ const PresentationMode = (() => {
 
     const DOM = {
         fullscreenBtn: document.getElementById('fullscreen-btn'),
-        wakelockBtn: document.getElementById('wakelock-btn'),
         body: document.body
     };
+
+    /**
+     * Enable Wake Lock (prevent screen dimming)
+     */
+    async function enableWakeLock() {
+        if ('wakeLock' in navigator) {
+            if (!wakeLock) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Wake Lock acquired - screen will stay on');
+                } catch (e) {
+                    console.warn('Wake Lock request failed:', e);
+                }
+            }
+        } else {
+            console.warn('Wake Lock API not supported in this browser');
+        }
+    }
+
+    /**
+     * Handle visibility change - re-acquire wake lock if needed
+     */
+    function handleVisibilityChange() {
+        if (document.hidden && wakeLock !== null) {
+            // Screen went to sleep, wake lock was released
+            wakeLock = null;
+        } else if (!document.hidden && wakeLock === null) {
+            // Screen turned back on, try to re-acquire wake lock
+            enableWakeLock();
+        }
+    }
 
     /**
      * Toggle fullscreen mode
@@ -545,43 +575,14 @@ const PresentationMode = (() => {
     }
 
     /**
-     * Toggle Wake Lock (prevent screen dimming)
+     * Handle fullscreen change events
      */
-    async function toggleWakeLock() {
-        if ('wakeLock' in navigator) {
-            if (!wakeLock) {
-                try {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                    DOM.wakelockBtn.style.opacity = '0.5';
-                    console.log('Wake Lock acquired');
-                } catch (e) {
-                    console.warn('Wake Lock request failed:', e);
-                }
-            } else {
-                try {
-                    await wakeLock.release();
-                    wakeLock = null;
-                    DOM.wakelockBtn.style.opacity = '1';
-                    console.log('Wake Lock released');
-                } catch (e) {
-                    console.warn('Wake Lock release error:', e);
-                }
-            }
-        } else {
-            console.warn('Wake Lock API not supported in this browser');
-        }
-    }
-
-    /**
-     * Handle visibility change - re-acquire wake lock if needed
-     */
-    function handleVisibilityChange() {
-        if (document.hidden && wakeLock !== null) {
-            // Screen went to sleep, wake lock was released
-            wakeLock = null;
-        } else if (!document.hidden && wakeLock === null) {
-            // Screen turned back on, try to re-acquire wake lock
-            toggleWakeLock();
+    function handleFullscreenChange() {
+        const inFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
+        if (!inFullscreen) {
+            isFullscreen = false;
+            DOM.body.classList.remove('fullscreen');
+            DOM.fullscreenBtn.style.opacity = '1';
         }
     }
 
@@ -590,12 +591,16 @@ const PresentationMode = (() => {
      */
     function setupEventListeners() {
         DOM.fullscreenBtn.addEventListener('click', toggleFullscreen);
-        DOM.wakelockBtn.addEventListener('click', toggleWakeLock);
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
         document.addEventListener('visibilitychange', handleVisibilityChange);
     }
 
     return {
-        setupEventListeners
+        init: () => {
+            setupEventListeners();
+            enableWakeLock();
+        }
     };
 })();
 
@@ -614,7 +619,7 @@ async function initApp() {
         DisplayManager.setupTimezoneSelector();
 
         // Set up fullscreen and wake lock controls
-        PresentationMode.setupEventListeners();
+        PresentationMode.init();
 
         // Start main render loop
         DisplayManager.startUpdateLoop();
