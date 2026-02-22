@@ -1,5 +1,5 @@
 /**
- * USAF Time Hack - Main Application
+ * Time Hacked - Main Application
  * 
  * Provides precise UTC time synchronization with visual flash cues
  * for pilot training watch synchronization.
@@ -605,7 +605,7 @@ const PresentationMode = (() => {
 
 async function initApp() {
     try {
-        console.log('Initializing USAF Time Hack...');
+        console.log('Initializing Time Hacked...');
 
         // Initialize time sync first
         await TimeSyncManager.init();
