@@ -138,6 +138,16 @@ const TimeSyncManager = (() => {
         }, SYNC_INTERVAL_MS);
     }
 
+    /**
+     * Get current drift in milliseconds
+     * @returns {number} Current drift value
+     */
+    function getCurrentDrift() {
+        if (!isSynced) return 0;
+        const elapsedSinceSync = performance.now() - perfNowAtSync;
+        return Math.round(driftMs);
+    }
+
     return {
         init: async () => {
             await sync();
@@ -147,7 +157,8 @@ const TimeSyncManager = (() => {
         getCurrentUtcDate,
         getCurrentUtcSeconds,
         getCurrentUtcMs_Component,
-        getSyncStatus
+        getSyncStatus,
+        getCurrentDrift
     };
 })();
 
@@ -268,14 +279,16 @@ const TimezoneManager = (() => {
 
 const VisualCueManager = (() => {
     let lastFlashSecond = -1;
-    let isCountingDown = false;
     let lastCountdownSecond = -1;
+    let countdownMessageState = null;
+    let hackMessageTimeout = null;
 
     const DOM = {
         clock: document.getElementById('clock'),
         flashOverlay: document.getElementById('flash-overlay'),
         countdownOverlay: document.getElementById('countdown-overlay'),
-        countdownNumber: document.getElementById('countdown-number')
+        countdownNumber: document.getElementById('countdown-number'),
+        upcomingText: document.getElementById('upcoming-text')
     };
 
     /**
@@ -327,45 +340,82 @@ const VisualCueManager = (() => {
     }
 
     /**
-     * Check if we should show countdown (10 seconds before minute)
-     * Countdown starts at :50 seconds
-     * @param {number} seconds - Current UTC seconds
-     * @returns {boolean}
-     */
-    function shouldCountdown(seconds) {
-        return seconds >= 50;
-    }
-
-    /**
-     * Get countdown display number (10 down to 1)
-     * @param {number} seconds - Current UTC seconds
-     * @returns {number}
-     */
-    function getCountdownNumber(seconds) {
-        // At :50, show 10; at :51, show 9; ... at :59, show 1; at :00, hide
-        if (seconds < 50) return 0;
-        return 60 - seconds;
-    }
-
-    /**
-     * Update countdown display
-     * Single flash per second during countdown period (10 seconds before minute)
-     * with inverted colors (black text on white) so time remains visible
+     * Update countdown display with messages in footer
      * @param {number} seconds - Current UTC seconds
      */
     function updateCountdown(seconds) {
-        if (shouldCountdown(seconds)) {
-            const countNum = getCountdownNumber(seconds);
-            if (countNum > 0 && countNum <= 10) {
-                // Trigger single countdown flash at each second
-                if (seconds !== lastCountdownSecond) {
-                    triggerFlash({ count: 1, type: 'countdown' });
-                    lastCountdownSecond = seconds;
+        const isCountdownPeriod = seconds >= 50 || seconds === 0;
+        
+        if (!isCountdownPeriod) {
+            // Clear countdown state when outside countdown period
+            if (countdownMessageState !== null && countdownMessageState !== 'hack') {
+                countdownMessageState = null;
+                // Clear the HACK message timeout if it exists
+                if (hackMessageTimeout) {
+                    clearTimeout(hackMessageTimeout);
+                    hackMessageTimeout = null;
                 }
             }
-        } else {
             lastCountdownSecond = -1;
+            return;
         }
+
+        // Only update when second changes
+        if (seconds === lastCountdownSecond) {
+            return;
+        }
+        lastCountdownSecond = seconds;
+
+        triggerFlash({ count: 1, type: 'countdown' });
+
+        // Stage 1: :50-:54 - "TEN SECONDS, STANDBY"
+        if (seconds >= 50 && seconds <= 54) {
+            DOM.upcomingText.textContent = 'TEN SECONDS, STANDBY';
+            countdownMessageState = 'standby';
+        }
+        // Stage 2: :55-:59 - Countdown 5 down to 1
+        else if (seconds >= 55 && seconds <= 59) {
+            const countNum = 60 - seconds; // 5, 4, 3, 2, 1
+            DOM.upcomingText.textContent = `${countNum}`;
+            countdownMessageState = 'countdown';
+        }
+        // Stage 3: :00 - "HACK, THE TIME IS NOW HH:MM"
+        else if (seconds === 0) {
+            const timezone = TimezoneManager.getTimezone();
+            const utcDate = TimeSyncManager.getCurrentUtcDate();
+            const components = TimezoneManager.getTimeComponentsInTimezone(utcDate, timezone);
+            const hour = String(components.hour).padStart(2, '0');
+            const minute = String(components.minute).padStart(2, '0');
+            
+            DOM.upcomingText.textContent = `HACK, THE TIME IS NOW ${hour}:${minute} LOCAL`;
+            countdownMessageState = 'hack';
+            
+            // Clear any existing timeout
+            if (hackMessageTimeout) {
+                clearTimeout(hackMessageTimeout);
+            }
+            
+            // Hide HACK message after 3 seconds
+            hackMessageTimeout = setTimeout(() => {
+                if (countdownMessageState === 'hack') {
+                    countdownMessageState = null;
+                    // Reset to normal upcoming text calculation
+                    const displayManager = window.DisplayManager;
+                    if (displayManager && typeof displayManager.updateUpcomingTextNow === 'function') {
+                        displayManager.updateUpcomingTextNow();
+                    }
+                }
+                hackMessageTimeout = null;
+            }, 5000);
+        }
+    }
+
+    /**
+     * Check if currently displaying countdown message
+     * @returns {boolean}
+     */
+    function isInCountdownMode() {
+        return countdownMessageState !== null;
     }
 
     /**
@@ -375,7 +425,7 @@ const VisualCueManager = (() => {
     function processVisualCues() {
         const utcSeconds = TimeSyncManager.getCurrentUtcSeconds();
 
-        // Handle countdown (10 seconds before minute)
+        // Handle countdown (10 seconds before minute and at :00)
         updateCountdown(utcSeconds);
 
         // Handle flashes at :00 and :30
@@ -391,7 +441,8 @@ const VisualCueManager = (() => {
     }
 
     return {
-        processVisualCues
+        processVisualCues,
+        isInCountdownMode
     };
 })();
 
@@ -405,7 +456,8 @@ const DisplayManager = (() => {
         upcomingText: document.getElementById('upcoming-text'),
         syncStatusText: document.getElementById('sync-status-text'),
         syncStatus: document.querySelector('.sync-status'),
-        tzSelect: document.getElementById('tz-select')
+        tzSelect: document.getElementById('tz-select'),
+        syncAccuracy: document.getElementById('sync-accuracy')
     };
 
     /**
@@ -419,8 +471,14 @@ const DisplayManager = (() => {
     /**
      * Update upcoming minute text at bottom
      * Shows either "In one minute..." or "In 30 seconds..."
+     * Skipped during countdown period when VisualCueManager handles the display
      */
     function updateUpcomingText() {
+        // Skip update if in countdown mode - let VisualCueManager handle display
+        if (VisualCueManager.isInCountdownMode()) {
+            return;
+        }
+
         const timezone = TimezoneManager.getTimezone();
         const utcDate = TimeSyncManager.getCurrentUtcDate();
         const components = TimezoneManager.getTimeComponentsInTimezone(utcDate, timezone);
@@ -458,6 +516,32 @@ const DisplayManager = (() => {
     }
 
     /**
+     * Update sync accuracy display
+     */
+    function updateSyncAccuracy() {
+        const synced = TimeSyncManager.getSyncStatus();
+        if (synced) {
+            const drift = TimeSyncManager.getCurrentDrift();
+            DOM.syncAccuracy.textContent = `Sync: ${drift}ms`;
+            // Color code based on drift magnitude
+            if (Math.abs(drift) < 50) {
+                DOM.syncAccuracy.style.color = '#0f0'; // Green - excellent
+                DOM.syncAccuracy.style.opacity = '0.8';
+            } else if (Math.abs(drift) < 100) {
+                DOM.syncAccuracy.style.color = '#ff0'; // Yellow - good
+                DOM.syncAccuracy.style.opacity = '0.8';
+            } else {
+                DOM.syncAccuracy.style.color = '#f00'; // Red - poor
+                DOM.syncAccuracy.style.opacity = '0.8';
+            }
+        } else {
+            DOM.syncAccuracy.textContent = 'Sync: --ms';
+            DOM.syncAccuracy.style.color = '#888';
+            DOM.syncAccuracy.style.opacity = '0.5';
+        }
+    }
+
+    /**
      * Set up timezone selector change event
      */
     function setupTimezoneSelector() {
@@ -482,6 +566,7 @@ const DisplayManager = (() => {
         updateClock(timeString);
         updateUpcomingText();
         updateSyncStatus();
+        updateSyncAccuracy();
         
         // Process visual cues (flashes, countdown)
         VisualCueManager.processVisualCues();
@@ -493,7 +578,8 @@ const DisplayManager = (() => {
         setupTimezoneSelector,
         startUpdateLoop: () => {
             requestAnimationFrame(update);
-        }
+        },
+        updateUpcomingTextNow: updateUpcomingText
     };
 })();
 
@@ -620,6 +706,10 @@ async function initApp() {
 
         // Set up fullscreen and wake lock controls
         PresentationMode.init();
+
+        // Expose managers to window for cross-module communication
+        window.DisplayManager = DisplayManager;
+        window.VisualCueManager = VisualCueManager;
 
         // Start main render loop
         DisplayManager.startUpdateLoop();

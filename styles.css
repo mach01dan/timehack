@@ -49,6 +49,14 @@ body {
     opacity: 0.8;
 }
 
+.sync-accuracy {
+    font-size: 11px;
+    color: #0f0;
+    opacity: 0.6;
+    font-weight: normal;
+    letter-spacing: 0.05em;
+}
+
 #tz-select {
     padding: 4px 8px;
     background: #111;
@@ -179,13 +187,15 @@ body {
     display: none;
 }
 
-.countdown-number {
-    font-size: clamp(80px, 30vw, 300px);
+.countdown-text {
+    font-size: clamp(28px, 6vw, 48px);
     font-weight: bold;
     color: #fff;
     text-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
-    letter-spacing: 0.1em;
-    animation: pulse-countdown 0.5s ease-in-out;
+    letter-spacing: 0.05em;
+    text-align: center;
+    line-height: 1.6;
+    margin-top: 20px;
 }
 
 @keyframes pulse-countdown {
