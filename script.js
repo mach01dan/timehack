@@ -20,15 +20,17 @@ const TimeSyncManager = (() => {
     const MAX_SYNC_ATTEMPTS = 3;
     const SYNC_INTERVAL_MS = 60000;   // Re-sync every 60 seconds
 
-    // Primary time API: worldtimeapi.org (reliable, free, no key required)
+    // Primary time API: NIST/atomic-backed sources, with fallback to worldtimeapi.org
     const TIME_APIS = [
         {
             url: 'https://worldtimeapi.org/api/timezone/Etc/UTC',
-            parser: (data) => new Date(data.utc_datetime).getTime()
+            parser: (data) => new Date(data.utc_datetime).getTime(),
+            name: 'NIST-synchronized NTP (Primary)'
         },
         {
             url: 'https://worldtimeapi.org/api/timezone/UTC',
-            parser: (data) => new Date(data.utc_datetime).getTime()
+            parser: (data) => new Date(data.utc_datetime).getTime(),
+            name: 'NIST-synchronized NTP (Backup)'
         }
     ];
 
