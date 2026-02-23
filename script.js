@@ -728,30 +728,3 @@ if (document.readyState === 'loading') {
 } else {
     initApp();
 }
-
-// ============================================================================
-// DEPLOYMENT NOTES
-// ============================================================================
-/*
- * DEPLOYMENT INSTRUCTIONS
- * 
- * This is a static site with no build step required.
- * 
- * Option 1: GitHub Pages
- * - Push files to GitHub repo
- * - Enable Pages in Settings → Pages
- * - Select "Deploy from Branch" → main
- * - Site available at https://username.github.io/repo
- * 
- * Option 2: Vercel
- * - Connect GitHub repo to Vercel
- * - Auto-deploys on push
- * - Site available at https://project-name.vercel.app
- * 
- * Option 3: Netlify
- * - Connect GitHub repo to Netlify
- * - Auto-deploys on push
- * - Site available at https://project-name.netlify.app
- * 
- * No environment variables, backend, or build tools required.
- */
