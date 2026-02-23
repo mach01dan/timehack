@@ -496,7 +496,7 @@ const DisplayManager = (() => {
             const nextMinute = TimezoneManager.getNextMinuteInTimezone(utcDate, timezone);
             const hour = String(nextMinute.hour).padStart(2, '0');
             const minute = String(nextMinute.minute).padStart(2, '0');
-            text = `IN 30 SECONDS, THE TIME WILL BE ${hour}:${minute} LOCAL`;
+            text = `30 SECONDS TO HACK`;
         }
 
         DOM.upcomingText.textContent = text;
