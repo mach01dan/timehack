@@ -375,11 +375,14 @@ const VisualCueManager = (() => {
             DOM.upcomingText.textContent = 'TEN SECONDS, STANDBY';
             countdownMessageState = 'standby';
         }
-        // Stage 2: :55-:59 - Countdown 5 down to 1
+        // Stage 2: :55-:59 - Countdown 5 down to 1 (skipping 4)
         else if (seconds >= 55 && seconds <= 59) {
             const countNum = 60 - seconds; // 5, 4, 3, 2, 1
-            DOM.upcomingText.textContent = `${countNum}`;
-            countdownMessageState = 'countdown';
+            // Skip displaying 4
+            if (countNum !== 4) {
+                DOM.upcomingText.textContent = `${countNum}`;
+                countdownMessageState = 'countdown';
+            }
         }
         // Stage 3: :00 - "HACK, THE TIME IS NOW HH:MM"
         else if (seconds === 0) {
